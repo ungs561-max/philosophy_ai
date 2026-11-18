@@ -8,7 +8,7 @@ st.write("철학자와 함께 당신의 고민을 생각해 보세요.")
 
 philosopher = st.selectbox(
     "대화할 철학자를 선택하세요",
-    ["장자", "소크라테스", "에피쿠로스"]
+    ["에픽테토스"]
 )
 
 worry = st.text_area("어떤 고민이 있나요?")
@@ -67,7 +67,20 @@ if st.button("상담 시작"):
                 st.subheader(f"💬 {philosopher}의 답변")
                 st.write(result.get("answer", "답변이 없습니다."))
 
-            except requests.exceptions.RequestException:
-                st.error("Dify API 연결에 실패했습니다.")
+            
+            except requests.exceptions.HTTPError as e:
+                status = (
+                    e.response.status_code
+                    if e.response is not None
+                    else "알 수 없음"
+                )
+                st.error(f"Dify API 오류 코드: {status}")
+                st.info("API 키와 상세 응답 내용은 공개하지 마세요.")
+
+            except requests.exceptions.RequestException as e:
+                st.error(
+                    f"Dify 서버 연결 오류: {type(e).__name__}"
+                )
+
             except ValueError:
                 st.error("API 응답을 읽을 수 없습니다.")
