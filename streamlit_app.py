@@ -68,7 +68,18 @@ if st.button("상담 시작"):
                 st.write(result.get("answer", "답변이 없습니다."))
 
             
+            
             except requests.exceptions.HTTPError as e:
+                status = e.response.status_code
+                st.error(f"Dify API 오류 코드: {status}")
+
+                try:
+                    error_data = e.response.json()
+                    error_code = error_data.get("code", "알 수 없음")
+                    st.write(f"오류 유형: {error_code}")
+                except ValueError:
+                    st.write("오류 유형을 확인할 수 없습니다.")
+
                 status = (
                     e.response.status_code
                     if e.response is not None
