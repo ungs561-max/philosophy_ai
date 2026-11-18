@@ -69,35 +69,26 @@ if st.button("상담 시작"):
 
             
             
-            
             except requests.exceptions.HTTPError as e:
-                status = e.response.status_code
-                st.error(f"Dify API 오류 코드: {status}")
-
-                try:
-                    error_data = e.response.json()
-                    error_code = error_data.get("code", "알 수 없음")
-                    st.write(f"오류 유형: {error_code}")
-                except ValueError:
-                    st.write("오류 유형을 확인할 수 없습니다.")
-
-                status = e.response.status_code
-                st.error(f"Dify API 오류 코드: {status}")
-
-                try:
-                    error_data = e.response.json()
-                    error_code = error_data.get("code", "알 수 없음")
-                    st.write(f"오류 유형: {error_code}")
-                except ValueError:
-                    st.write("오류 유형을 확인할 수 없습니다.")
-
-                status = (
-                    e.response.status_code
-                    if e.response is not None
-                    else "알 수 없음"
+                st.error(
+                    f"Dify API 오류 코드: {e.response.status_code}"
                 )
-                st.error(f"Dify API 오류 코드: {status}")
-                st.info("API 키와 상세 응답 내용은 공개하지 마세요.")
+
+                try:
+                    error_data = e.response.json()
+
+                    st.write(
+                        "오류 유형:",
+                        error_data.get("code", "알 수 없음")
+                    )
+
+                    st.write(
+                        "오류 설명:",
+                        error_data.get("message", "설명 없음")
+                    )
+
+                except ValueError:
+                    st.warning("오류 응답을 읽을 수 없습니다.")
 
             except requests.exceptions.RequestException as e:
                 st.error(
@@ -106,3 +97,6 @@ if st.button("상담 시작"):
 
             except ValueError:
                 st.error("API 응답을 읽을 수 없습니다.")
+
+            
+            
