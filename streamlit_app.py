@@ -27,6 +27,77 @@ MODES = {
     },
 }
 
+# 에픽테토스는 기존 API 키를 사용합니다.
+# 다른 철학자의 키를 Streamlit Secrets에 추가하면 해당 모드에서 이용할 수 있습니다.
+PHILOSOPHERS = {
+    "에픽테토스": {
+        "상담 모드": "DIFY_COUNSEL_KEY",
+        "철학공부 모드": "DIFY_STUDY_KEY",
+    },
+    "애덤 스미스": {
+        "상담 모드": "DIFY_SMITH_COUNSEL_KEY",
+        "철학공부 모드": "DIFY_SMITH_STUDY_KEY",
+    },
+    "coming_1": None,
+    "coming_2": None,
+}
+
+
+def chat_id(mode, philosopher):
+    return f"{mode}::{philosopher}"
+
+
+def philosopher_key(mode, philosopher):
+    entries = PHILOSOPHERS.get(philosopher)
+    return entries.get(mode) if entries else None
+
+
+def show_welcome_panel(mode):
+    # 밝은 Streamlit 기본 알림창 대신 짙은 나무색 안내 패널을 사용합니다.
+    if mode == "상담 모드":
+        title = "철학자의 서재에 오신 것을 환영합니다"
+        paragraphs = [
+            "이곳은 철학자의 서재입니다.",
+            "철학자들은 고립에 처해 힘들어하고 있는 당신과 대화할 준비가 되어 있습니다.",
+            "지금 고민이 많으신가요?",
+        ]
+        emphasis = "그렇다면 지혜의 역사에 한 획을 그은 철학자들과 대화하며 삶의 의미에 대해 고민해 보시기 바랍니다."
+    else:
+        title = "철학의 세계에 오신 것을 환영합니다"
+        paragraphs = [
+            "철학자들이 남긴 사상과 지혜를 탐구하는 공간입니다.",
+            "궁금했던 철학 개념이나 철학자의 사상을 자유롭게 질문해 보세요.",
+        ]
+        emphasis = "오래된 질문 속에서 새로운 생각을 발견해 보세요."
+    content = "".join(f'<div class="library-intro-text">{html.escape(x)}</div>' for x in paragraphs)
+    st.html(f"""
+<style>
+.library-intro {{ width: 100%; max-width: 704px; padding: 24px 28px; margin: 14px 0 20px;
+    box-sizing: border-box; background: rgba(43,27,17,.94); border: 2px solid #a77a48;
+    border-left: 9px solid #76502b; border-radius: 10px;
+    box-shadow: inset 0 0 0 3px rgba(196,151,91,.12), 0 8px 22px rgba(0,0,0,.3); }}
+.library-intro-label {{ color: #d6aa6e; font-size: 11px; letter-spacing: 2px; margin-bottom: 10px; }}
+.library-intro-title {{ color: #fff1d9; font-size: 21px; font-weight: 700; line-height: 1.5; margin-bottom: 15px; }}
+.library-intro-divider {{ height: 1px; background: #8c653e; margin-bottom: 17px; }}
+.library-intro-text {{ color: #f1e1c8; font-size: 15px; line-height: 1.9; margin-bottom: 12px; word-break: keep-all; }}
+.library-intro-emphasis {{ color: #eac48b; font-size: 15px; font-weight: 600; line-height: 1.9; margin-top: 14px; word-break: keep-all; }}
+.library-intro-footer {{ color: #d6aa6e; text-align: right; font-size: 12px; margin-top: 20px; }}
+@media (max-width: 768px) {{
+  .library-intro {{ padding: 19px 17px; }}
+  .library-intro-title {{ font-size: 18px; }}
+  .library-intro-text, .library-intro-emphasis {{ font-size: 14px; line-height: 1.8; }}
+}}
+</style>
+<div class="library-intro">
+ <div class="library-intro-label">WELCOME TO THE LIBRARY</div>
+ <div class="library-intro-title">📖 {html.escape(title)}</div>
+ <div class="library-intro-divider"></div>
+ {content}
+ <div class="library-intro-emphasis">{html.escape(emphasis)}</div>
+ <div class="library-intro-footer">— 철학자의 서재</div>
+</div>
+""")
+
 
 def set_library_background():
     image_path = BASE_DIR / "library_bg.png"
@@ -114,11 +185,22 @@ def initialize_state():
     if "user_id" not in st.session_state:
         st.session_state.user_id = str(uuid.uuid4())
     if "conversations" not in st.session_state:
-        st.session_state.conversations = {name: "" for name in MODES}
+        st.session_state.conversations = {}
     if "histories" not in st.session_state:
-        st.session_state.histories = {name: [] for name in MODES}
+        st.session_state.histories = {}
+    # 이전 버전의 모드별 대화 기록을 에픽테토스 기록으로 옮깁니다.
+    for mode_name in MODES:
+        old_conversation = st.session_state.conversations.pop(mode_name, None)
+        old_history = st.session_state.histories.pop(mode_name, None)
+        key = chat_id(mode_name, "에픽테토스")
+        if old_conversation is not None:
+            st.session_state.conversations.setdefault(key, old_conversation)
+        if old_history is not None:
+            st.session_state.histories.setdefault(key, old_history)
     if "active_mode" not in st.session_state:
         st.session_state.active_mode = "상담 모드"
+    if "active_philosopher" not in st.session_state:
+        st.session_state.active_philosopher = "에픽테토스"
     if "pending_reflection" not in st.session_state:
         st.session_state.pending_reflection = None
     if "selected_quote" not in st.session_state:
@@ -133,15 +215,16 @@ def start_reflection():
         return
 
     st.session_state.active_mode = "상담 모드"
-    st.session_state.conversations["상담 모드"] = ""
-    st.session_state.histories["상담 모드"] = []
+    key = chat_id("상담 모드", st.session_state.active_philosopher)
+    st.session_state.conversations[key] = ""
+    st.session_state.histories[key] = []
     st.session_state.pending_reflection = selected.copy()
 
 
 def reset_conversation():
-    mode = st.session_state.active_mode
-    st.session_state.conversations[mode] = ""
-    st.session_state.histories[mode] = []
+    key = chat_id(st.session_state.active_mode, st.session_state.active_philosopher)
+    st.session_state.conversations[key] = ""
+    st.session_state.histories[key] = []
     st.session_state.pending_reflection = None
 
 
@@ -246,7 +329,7 @@ def show_quote_card():
         )
 
 
-def send_to_dify(question, mode, api_key):
+def send_to_dify(question, chat_key, api_key):
     response = requests.post(
         DIFY_API_URL,
         headers={
@@ -257,7 +340,7 @@ def send_to_dify(question, mode, api_key):
             "inputs": {},
             "query": question,
             "response_mode": "blocking",
-            "conversation_id": st.session_state.conversations[mode],
+            "conversation_id": st.session_state.conversations.get(chat_key, ""),
             "user": st.session_state.user_id,
         },
         timeout=120,
@@ -301,152 +384,31 @@ mode = st.radio(
 )
 config = MODES[mode]
 
-# 서재 환영 안내창
-if mode == "상담 모드":
-    welcome_title = "철학자의 서재에 오신 것을 환영합니다"
-    welcome_text = """
-    <div class="library-intro-text">
-        이곳은 철학자의 서재입니다.
-    </div>
-    <div class="library-intro-text">
-        철학자들은 고립에 처해 힘들어하고 있는
-        당신과 대화할 준비가 되어 있습니다.
-    </div>
-    <div class="library-intro-text">
-        지금 고민이 많으신가요?
-    </div>
-    <div class="library-intro-emphasis">
-        그렇다면 지혜의 역사에 한 획을 그은
-        철학자들과 대화하며 삶의 의미에 대해
-        고민해 보시기 바랍니다.
-    </div>
-    """
-else:
-    welcome_title = "철학의 세계에 오신 것을 환영합니다"
-    welcome_text = """
-    <div class="library-intro-text">
-        철학자들이 남긴 사상과 지혜를 탐구하는 공간입니다.
-    </div>
-    <div class="library-intro-text">
-        궁금했던 철학 개념이나 철학자의 사상을
-        자유롭게 질문해 보세요.
-    </div>
-    <div class="library-intro-emphasis">
-        오래된 질문 속에서 새로운 생각을 발견해 보세요.
-    </div>
-    """
+# 모드별로 철학자를 선택할 수 있습니다.
+philosopher = st.selectbox(
+    "대화할 철학자를 선택하세요",
+    list(PHILOSOPHERS),
+    key="active_philosopher",
+    format_func=lambda name: "아직 오는 중..." if name.startswith("coming_") else name,
+)
+key = chat_id(mode, philosopher)
+st.session_state.conversations.setdefault(key, "")
+st.session_state.histories.setdefault(key, [])
 
-st.html(f"""
-<style>
-.library-intro {{
-    position: relative;
-    width: 100%;
-    max-width: 704px;
-    padding: 26px 30px;
-    margin: 15px 0 22px 0;
-    box-sizing: border-box;
+show_welcome_panel(mode)
 
-    background: rgba(43, 27, 17, 0.94);
-    border: 2px solid #a77a48;
-    border-left: 9px solid #76502b;
-    border-radius: 10px;
-
-    box-shadow:
-        inset 0 0 0 3px rgba(196, 151, 91, 0.12),
-        0 8px 22px rgba(0, 0, 0, 0.3);
-}}
-
-.library-intro-label {{
-    color: #d6aa6e !important;
-    font-size: 11px;
-    letter-spacing: 2px;
-    margin-bottom: 10px;
-}}
-
-.library-intro-title {{
-    color: #fff1d9 !important;
-    font-size: 21px;
-    font-weight: 700;
-    line-height: 1.5;
-    margin-bottom: 15px;
-}}
-
-.library-intro-divider {{
-    height: 1px;
-    background: #8c653e;
-    margin-bottom: 17px;
-}}
-
-.library-intro-text {{
-    color: #f1e1c8 !important;
-    font-size: 15px;
-    line-height: 1.9;
-    margin-bottom: 12px;
-    word-break: keep-all;
-}}
-
-.library-intro-emphasis {{
-    color: #eac48b !important;
-    font-size: 15px;
-    font-weight: 600;
-    line-height: 1.9;
-    margin-top: 14px;
-    word-break: keep-all;
-}}
-
-.library-intro-footer {{
-    color: #d6aa6e !important;
-    text-align: right;
-    font-size: 12px;
-    margin-top: 20px;
-}}
-
-@media (max-width: 768px) {{
-    .library-intro {{
-        padding: 19px 17px;
-        margin-top: 12px;
-    }}
-
-    .library-intro-title {{
-        font-size: 18px;
-    }}
-
-    .library-intro-text,
-    .library-intro-emphasis {{
-        font-size: 14px;
-        line-height: 1.8;
-    }}
-}}
-</style>
-
-<div class="library-intro">
-    <div class="library-intro-label">
-        WELCOME TO THE LIBRARY
-    </div>
-
-    <div class="library-intro-title">
-        📖 {welcome_title}
-    </div>
-
-    <div class="library-intro-divider"></div>
-
-    {welcome_text}
-
-    <div class="library-intro-footer">
-        — 철학자의 서재
-    </div>
-</div>
-""")
-
-
-if config["key_name"] not in st.secrets:
-    st.error("해당 모드의 API 키가 등록되지 않았습니다.")
+secret_name = philosopher_key(mode, philosopher)
+if secret_name is None:
+    st.info("아직 오는 중... 새로운 철학자가 서재에 합류할 예정입니다.")
     st.stop()
-api_key = st.secrets[config["key_name"]]
+if secret_name not in st.secrets or not str(st.secrets[secret_name]).strip():
+    st.info(f"{philosopher}의 {mode}는 준비 중입니다. Dify API 키를 연결하면 이용할 수 있습니다.")
+    st.stop()
+api_key = st.secrets[secret_name]
 
 st.button("새 대화 시작", key="new_conversation_button", on_click=reset_conversation)
 
-for message in st.session_state.histories[mode]:
+for message in st.session_state.histories[key]:
     with st.chat_message(message["role"]):
         st.write(message["content"])
 
@@ -464,7 +426,8 @@ if reflection is not None:
         "다음 명언과 성찰 질문으로 철학 상담을 시작해 주세요. "
         "성찰 질문에 대신 답하지 말고, 저의 경험을 자연스럽게 물어봐 주세요. "
         "응답은 짧고 공감적으로 해 주세요.\n\n"
-        f"철학자: {reflection['philosopher']}\n"
+        f"현재 선택한 상담 철학자: {philosopher}\n"
+        f"인용문 원저자 표기: {reflection['philosopher']}\n"
         f"명언: {reflection['quote']}\n"
         f"성찰 질문: {reflection['question']}"
     )
@@ -476,7 +439,7 @@ else:
     api_question = None
 
 if api_question:
-    st.session_state.histories[mode].append(
+    st.session_state.histories[key].append(
         {"role": "user", "content": visible_question}
     )
     with st.chat_message("user"):
@@ -485,13 +448,13 @@ if api_question:
     with st.chat_message("assistant"):
         with st.spinner("답변을 생성하고 있습니다..."):
             try:
-                result = send_to_dify(api_question, mode, api_key)
+                result = send_to_dify(api_question, key, api_key)
                 answer = result.get("answer", "답변을 생성하지 못했습니다.")
-                st.session_state.conversations[mode] = result.get(
-                    "conversation_id", st.session_state.conversations[mode]
+                st.session_state.conversations[key] = result.get(
+                    "conversation_id", st.session_state.conversations[key]
                 )
                 st.write(answer)
-                st.session_state.histories[mode].append(
+                st.session_state.histories[key].append(
                     {"role": "assistant", "content": answer}
                 )
             except (requests.exceptions.RequestException, ValueError) as error:
