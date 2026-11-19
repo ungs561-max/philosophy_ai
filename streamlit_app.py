@@ -300,7 +300,144 @@ mode = st.radio(
     key="active_mode",
 )
 config = MODES[mode]
-st.info(config["description"])
+
+# 서재 환영 안내창
+if mode == "상담 모드":
+    welcome_title = "철학자의 서재에 오신 것을 환영합니다"
+    welcome_text = """
+    <div class="library-intro-text">
+        이곳은 철학자의 서재입니다.
+    </div>
+    <div class="library-intro-text">
+        철학자들은 고립에 처해 힘들어하고 있는
+        당신과 대화할 준비가 되어 있습니다.
+    </div>
+    <div class="library-intro-text">
+        지금 고민이 많으신가요?
+    </div>
+    <div class="library-intro-emphasis">
+        그렇다면 지혜의 역사에 한 획을 그은
+        철학자들과 대화하며 삶의 의미에 대해
+        고민해 보시기 바랍니다.
+    </div>
+    """
+else:
+    welcome_title = "철학의 세계에 오신 것을 환영합니다"
+    welcome_text = """
+    <div class="library-intro-text">
+        철학자들이 남긴 사상과 지혜를 탐구하는 공간입니다.
+    </div>
+    <div class="library-intro-text">
+        궁금했던 철학 개념이나 철학자의 사상을
+        자유롭게 질문해 보세요.
+    </div>
+    <div class="library-intro-emphasis">
+        오래된 질문 속에서 새로운 생각을 발견해 보세요.
+    </div>
+    """
+
+st.html(f"""
+<style>
+.library-intro {{
+    position: relative;
+    width: 100%;
+    max-width: 704px;
+    padding: 26px 30px;
+    margin: 15px 0 22px 0;
+    box-sizing: border-box;
+
+    background: rgba(43, 27, 17, 0.94);
+    border: 2px solid #a77a48;
+    border-left: 9px solid #76502b;
+    border-radius: 10px;
+
+    box-shadow:
+        inset 0 0 0 3px rgba(196, 151, 91, 0.12),
+        0 8px 22px rgba(0, 0, 0, 0.3);
+}}
+
+.library-intro-label {{
+    color: #d6aa6e !important;
+    font-size: 11px;
+    letter-spacing: 2px;
+    margin-bottom: 10px;
+}}
+
+.library-intro-title {{
+    color: #fff1d9 !important;
+    font-size: 21px;
+    font-weight: 700;
+    line-height: 1.5;
+    margin-bottom: 15px;
+}}
+
+.library-intro-divider {{
+    height: 1px;
+    background: #8c653e;
+    margin-bottom: 17px;
+}}
+
+.library-intro-text {{
+    color: #f1e1c8 !important;
+    font-size: 15px;
+    line-height: 1.9;
+    margin-bottom: 12px;
+    word-break: keep-all;
+}}
+
+.library-intro-emphasis {{
+    color: #eac48b !important;
+    font-size: 15px;
+    font-weight: 600;
+    line-height: 1.9;
+    margin-top: 14px;
+    word-break: keep-all;
+}}
+
+.library-intro-footer {{
+    color: #d6aa6e !important;
+    text-align: right;
+    font-size: 12px;
+    margin-top: 20px;
+}}
+
+@media (max-width: 768px) {{
+    .library-intro {{
+        padding: 19px 17px;
+        margin-top: 12px;
+    }}
+
+    .library-intro-title {{
+        font-size: 18px;
+    }}
+
+    .library-intro-text,
+    .library-intro-emphasis {{
+        font-size: 14px;
+        line-height: 1.8;
+    }}
+}}
+</style>
+
+<div class="library-intro">
+    <div class="library-intro-label">
+        WELCOME TO THE LIBRARY
+    </div>
+
+    <div class="library-intro-title">
+        📖 {welcome_title}
+    </div>
+
+    <div class="library-intro-divider"></div>
+
+    {welcome_text}
+
+    <div class="library-intro-footer">
+        — 철학자의 서재
+    </div>
+</div>
+""")
+
 
 if config["key_name"] not in st.secrets:
     st.error("해당 모드의 API 키가 등록되지 않았습니다.")
