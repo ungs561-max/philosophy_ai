@@ -1,6 +1,10 @@
 
 
 import streamlit as st
+import random
+import re
+import html
+from pathlib import Path
 import base64
 from pathlib import Path
 
@@ -46,6 +50,158 @@ st.set_page_config(
     page_icon="📚"
 )
 
+# =====================================
+# 철학자의 서재 - 랜덤 명언 카드
+# =====================================
+
+def load_quotes():
+    file_path = Path(__file__).parent / "quotes.txt"
+
+    if not file_path.exists():
+        return []
+
+    content = file_path.read_text(encoding="utf-8-sig")
+
+    # 각 '- 명언:'을 기준으로 명언 묶음을 분리
+    blocks = re.split(r"(?m)^\s*-\s*명언\s*:", content)
+
+    quotes = []
+
+    for block in blocks[1:]:
+        lines = [line.strip() for line in block.splitlines()
+                 if line.strip()]
+
+        if len(lines) < 3:
+            continue
+
+        quote = lines[0].strip(' "\u201c\u201d')
+
+        question_line = next(
+            (line for line in lines[1:]
+             if re.match(r"^-?\s*성찰 질문\s*:", line)),
+            None
+        )
+
+        if not question_line:
+            continue
+
+        question = re.sub(
+            r"^-?\s*성찰 질문\s*:\s*",
+            "",
+            question_line
+        )
+
+        philosopher = lines[-1].strip()
+
+        if quote and question and philosopher:
+            quotes.append({
+                "quote": quote,
+                "question": question,
+                "philosopher": philosopher
+            })
+
+    return quotes
+
+
+def show_quote_card():
+    quotes = load_quotes()
+
+    if not quotes:
+        return
+
+    # 새로고침 시 새 명언 선택
+    # 같은 세션에서 상담할 때는 유지
+    if "selected_quote" not in st.session_state:
+        st.session_state.selected_quote = random.choice(quotes)
+
+    selected = st.session_state.selected_quote
+
+    # HTML에 안전하게 텍스트 삽입
+    quote = html.escape(selected["quote"])
+    question = html.escape(selected["question"])
+    philosopher = html.escape(selected["philosopher"])
+
+    st.markdown(
+        f"""
+        <style>
+        .philosophy-quote-card {{
+            position: fixed;
+            top: 43%;
+            right: 5%;
+            width: 320px;
+            max-width: 25vw;
+            padding: 23px;
+            z-index: 50;
+
+            background: rgba(42, 29, 20, 0.90);
+            border: 1px solid rgba(210, 170, 105, 0.55);
+            border-radius: 14px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.30);
+            color: #f8ecd8;
+            box-sizing: border-box;
+        }}
+
+        .philosophy-quote-heading {{
+            font-size: 13px;
+            color: #ddbd86;
+            margin-bottom: 17px;
+        }}
+
+        .philosophy-quote-main {{
+            font-size: 19px;
+            font-weight: 650;
+            line-height: 1.7;
+            margin-bottom: 20px;
+            overflow-wrap: anywhere;
+        }}
+
+        .philosophy-quote-question {{
+            border-top: 1px solid #806548;
+            padding-top: 14px;
+            font-size: 13px;
+            line-height: 1.7;
+            color: #e5d2b5;
+            overflow-wrap: anywhere;
+        }}
+
+        .philosophy-quote-author {{
+            margin-top: 18px;
+            text-align: right;
+            font-size: 12px;
+            color: #d5ae78;
+        }}
+
+        @media (max-width: 950px) {{
+            .philosophy-quote-card {{
+                display: none;
+            }}
+        }}
+        </style>
+
+        <div class="philosophy-quote-card">
+            <div class="philosophy-quote-heading">
+                ✦ 서재의 한 문장
+            </div>
+
+            <div class="philosophy-quote-main">
+                “{quote}”
+            </div>
+
+            <div class="philosophy-quote-question">
+                {question}
+            </div>
+
+            <div class="philosophy-quote-author">
+                — {philosopher}
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+
+# 랜덤 명언 카드 실행
+show_quote_card()
 st.title("📚 철학자의 서재")
 st.write("철학자와 함께 고민을 나누거나 철학을 공부해 보세요.")
 
