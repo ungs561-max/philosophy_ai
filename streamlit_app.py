@@ -48,6 +48,31 @@ def set_library_background():
 .stApp h1, .stApp h2, .stApp h3, .stApp p, .stApp label {{
     color: #FFF4DE;
 }}
+/* 상담 모드 설명창: 밝은 글자가 보이도록 진한 배경 적용 */
+.stApp [data-testid="stAlert"] {{
+    background: rgba(63, 43, 29, 0.94);
+    border: 1px solid rgba(210, 170, 105, 0.65);
+    border-radius: 10px;
+}}
+.stApp [data-testid="stAlert"] p {{
+    color: #FFF4DE !important;
+}}
+/* 새 대화 시작 버튼만 별도 색상 적용 */
+.stApp .st-key-new_conversation_button button {{
+    background: #D8B47B;
+    color: #302013;
+    border: 1px solid #B48A53;
+    font-weight: 650;
+}}
+.stApp .st-key-new_conversation_button button:hover {{
+    background: #EBCB96;
+    color: #302013;
+    border-color: #D8B47B;
+}}
+.stApp .st-key-new_conversation_button button:focus {{
+    color: #302013;
+    border-color: #D8B47B;
+}}
 </style>
 """
     )
@@ -282,7 +307,7 @@ if config["key_name"] not in st.secrets:
     st.stop()
 api_key = st.secrets[config["key_name"]]
 
-st.button("새 대화 시작", on_click=reset_conversation)
+st.button("새 대화 시작", key="new_conversation_button", on_click=reset_conversation)
 
 for message in st.session_state.histories[mode]:
     with st.chat_message(message["role"]):
