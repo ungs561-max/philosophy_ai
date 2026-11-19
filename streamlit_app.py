@@ -7,7 +7,7 @@ import html
 from pathlib import Path
 import base64
 from pathlib import Path
-
+import textwrap
 # 도서관 배경 이미지 불러오기
 def set_library_background():
     image_path = Path(__file__).parent / "library_bg.png"
@@ -121,8 +121,25 @@ def show_quote_card():
     question = html.escape(selected["question"])
     philosopher = html.escape(selected["philosopher"])
 
-    st.markdown(
-        f"""
+    st.markdown(f"""
+    <div class="philosophy-quote-card">
+        <div class="philosophy-quote-heading">
+            ✦ 서재의 한 문장
+        </div>
+
+        <div class="philosophy-quote-main">
+            “{quote}”
+        </div>
+
+        <div class="philosophy-quote-question">
+            {question}
+        </div>
+
+        <div class="philosophy-quote-author">
+            — {philosopher}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
         <style>
         .philosophy-quote-card {{
             position: fixed;
@@ -195,10 +212,9 @@ def show_quote_card():
                 — {philosopher}
             </div>
         </div>
-        """,
+        """),
         unsafe_allow_html=True
     )
-
 
 # 랜덤 명언 카드 실행
 show_quote_card()
