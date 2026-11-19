@@ -1,8 +1,46 @@
 
+
 import streamlit as st
+import base64
+from pathlib import Path
+
+# 도서관 배경 이미지 불러오기
+def set_library_background():
+    image_path = Path(__file__).parent / "library_bg.png"
+
+    with open(image_path, "rb") as image_file:
+        encoded_image = base64.b64encode(
+            image_file.read()
+        ).decode()
+
+    st.html(f"""
+    <style>
+    .stApp {{
+        background-image:
+            linear-gradient(
+                rgba(20, 12, 5, 0.55),
+                rgba(20, 12, 5, 0.55)
+            ),
+            url("data:image/png;base64,{encoded_image}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+    }}
+
+    .stApp h1,
+    .stApp h2,
+    .stApp h3,
+    .stApp p,
+    .stApp label {{
+        color: #FFF4DE;
+    }}
+    </style>
+    """)
+
+# 배경 적용
+set_library_background()
 import requests
 import uuid
-
 st.set_page_config(
     page_title="철학자의 서재",
     page_icon="📚"
