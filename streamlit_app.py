@@ -370,6 +370,53 @@ def send_to_dify(question, key, api_key):
     return response.json()
 
 
+def render_typing_indicator():
+    """답변 대기 중, 채팅 말풍선 안에서 움직이는 점 3개를 표시합니다."""
+    return """
+<style>
+.philosophy-typing-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    margin: 6px 0;
+}
+.philosophy-typing-bubble {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 12px 15px;
+    border-radius: 17px 17px 17px 5px;
+    background: #758a9a;
+    box-shadow: 0 2px 7px rgba(0, 0, 0, .20);
+}
+.philosophy-typing-dot {
+    width: 9px;
+    height: 9px;
+    flex: 0 0 9px;
+    border-radius: 50%;
+    background: #ffe24a;
+    animation: philosophy-typing-pulse 1.2s infinite ease-in-out;
+}
+.philosophy-typing-dot:nth-child(2) { animation-delay: .15s; }
+.philosophy-typing-dot:nth-child(3) { animation-delay: .30s; }
+@keyframes philosophy-typing-pulse {
+    0%, 60%, 100% { transform: translateY(0); opacity: .45; }
+    30% { transform: translateY(-4px); opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    .philosophy-typing-dot { animation: none; opacity: 1; }
+}
+</style>
+<div class="philosophy-typing-wrap" role="status" aria-label="답변 작성 중">
+    <div class="philosophy-typing-bubble" aria-hidden="true">
+        <span class="philosophy-typing-dot"></span>
+        <span class="philosophy-typing-dot"></span>
+        <span class="philosophy-typing-dot"></span>
+    </div>
+</div>
+"""
+
+
 # ================== 화면 시작 ==================
 set_library_background()
 initialize_state()
@@ -428,28 +475,34 @@ if api_question:
     with st.chat_message("user"):
         st.write(public_question)
     with st.chat_message("assistant"):
-        with st.spinner("답변을 생성하고 있습니다..."):
+        # Streamlit의 기본 spinner 대신 CSS 말풍선 애니메이션 표시
+        typing_placeholder = st.empty()
+        typing_placeholder.html(render_typing_indicator())
+        try:
+            result = send_to_dify(api_question, key, api_key)
+            answer = result.get("answer", "답변을 생성하지 못했습니다.")
+            st.session_state.conversations[key] = result.get(
+                "conversation_id", st.session_state.conversations[key]
+            )
+            typing_placeholder.empty()
+            st.write(answer)
+            st.session_state.histories[key].append(
+                {"role": "assistant", "content": answer}
+            )
+        except requests.exceptions.HTTPError as error:
+            typing_placeholder.empty()
+            response = error.response
+            st.error(f"API 오류: {response.status_code}")
             try:
-                result = send_to_dify(api_question, key, api_key)
-                answer = result.get("answer", "답변을 생성하지 못했습니다.")
-                st.session_state.conversations[key] = result.get(
-                    "conversation_id", st.session_state.conversations[key]
-                )
-                st.write(answer)
-                st.session_state.histories[key].append(
-                    {"role": "assistant", "content": answer}
-                )
-            except requests.exceptions.HTTPError as error:
-                response = error.response
-                st.error(f"API 오류: {response.status_code}")
-                try:
-                    data = response.json()
-                    st.write(f"오류 유형: {data.get('code', '알 수 없음')}")
-                    if "quota" in str(data.get("message", "")).lower():
-                        st.warning("AI 모델 사용량 한도를 확인해 주세요.")
-                except ValueError:
-                    pass
-            except requests.exceptions.RequestException:
-                st.error("Dify 서버에 연결할 수 없습니다.")
+                data = response.json()
+                st.write(f"오류 유형: {data.get('code', '알 수 없음')}")
+                if "quota" in str(data.get("message", "")).lower():
+                    st.warning("AI 모델 사용량 한도를 확인해 주세요.")
             except ValueError:
-                st.error("AI 응답을 읽을 수 없습니다.")
+                pass
+        except requests.exceptions.RequestException:
+            typing_placeholder.empty()
+            st.error("Dify 서버에 연결할 수 없습니다.")
+        except ValueError:
+            typing_placeholder.empty()
+            st.error("AI 응답을 읽을 수 없습니다.")
