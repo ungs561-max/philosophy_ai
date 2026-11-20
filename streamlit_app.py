@@ -15,6 +15,7 @@ import streamlit as st
 st.set_page_config(page_title="철학자의 서재", page_icon="📚")
 
 BASE_DIR = Path(__file__).parent
+PHILOSOPHER_AVATAR = str(BASE_DIR / "philosopher_icon.png")
 DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
 
 MODES = {
@@ -457,7 +458,10 @@ ensure_history(key)
 st.button("새 대화 시작", key="new_conversation_button", on_click=reset_conversation)
 
 for message in st.session_state.histories[key]:
-    with st.chat_message(message["role"]):
+    with st.chat_message(
+        message["role"],
+        avatar=PHILOSOPHER_AVATAR if message["role"] == "assistant" else None
+    ):
         st.write(message["content"])
 
 question = st.chat_input(MODES[mode]["placeholder"])
@@ -474,7 +478,7 @@ if api_question:
     st.session_state.histories[key].append({"role": "user", "content": public_question})
     with st.chat_message("user"):
         st.write(public_question)
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=PHILOSOPHER_AVATAR):
         # Streamlit의 기본 spinner 대신 CSS 말풍선 애니메이션 표시
         typing_placeholder = st.empty()
         typing_placeholder.html(render_typing_indicator())
