@@ -427,6 +427,30 @@ def render_typing_indicator():
 
 # ================== 화면 시작 ==================
 set_library_background()
+# 철학자 프로필 아이콘의 흰색 배경 제거
+st.html("""
+<style>
+/* 이미지가 있는 채팅 프로필만 적용 */
+[data-testid="stChatMessageAvatar"]:has(img) {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    border-radius: 50% !important;
+}
+
+/* 철학자 이미지 자체를 원형으로 표시 */
+[data-testid="stChatMessageAvatar"] img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    border-radius: 50% !important;
+    display: block !important;
+}
+</style>
+""")
+
 initialize_state()
 
 st.title("📚 철학자의 서재")
