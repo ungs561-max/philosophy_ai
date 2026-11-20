@@ -15,7 +15,14 @@ import streamlit as st
 st.set_page_config(page_title="철학자의 서재", page_icon="📚")
 
 BASE_DIR = Path(__file__).parent
-PHILOSOPHER_AVATAR = str(BASE_DIR / "philosopher_icon.png")
+# 철학자 아이콘 불러오기
+avatar_path = BASE_DIR / "philosopher_icon.png"
+
+if avatar_path.is_file():
+    PHILOSOPHER_AVATAR = avatar_path.read_bytes()
+else:
+    PHILOSOPHER_AVATAR = "📚"
+    st.warning(f"철학자 아이콘을 찾을 수 없습니다: {avatar_path}")
 DIFY_API_URL = "https://api.dify.ai/v1/chat-messages"
 
 MODES = {
