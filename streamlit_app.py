@@ -23,6 +23,7 @@ st.html("""<style>
 FRONTEND = ROOT / "frontend"
 COMPONENT_KEY = "philosopher_library"
 STUDY_ENABLED = frozenset({"epictetus"})
+DEMO_ENABLED = os.environ.get("PHILOSOPHY_DEMO") == "1"
 
 
 def secret(name):
@@ -62,7 +63,8 @@ def valid_payload(value):
             return False
     text = value.get("text")
     return (
-        isinstance(value.get("test"), bool) and isinstance(value.get("fromCard"), bool)
+        isinstance(value.get("test"), bool) and (DEMO_ENABLED or not value["test"])
+        and isinstance(value.get("fromCard"), bool)
         and isinstance(text, str) and len(text) <= 4000 and (value["fromCard"] or bool(text.strip()))
     )
 
@@ -136,7 +138,7 @@ public_profiles = {
     for slug, profile in PROFILES.items()
 }
 config = {
-    "demo": os.environ.get("PHILOSOPHY_DEMO") == "1",
+    "demo": DEMO_ENABLED,
     "studyEnabled": sorted(STUDY_ENABLED),
     "profiles": {
         slug: {mode: {"available": bool(secret(name)), "card": cards[slug][mode]}

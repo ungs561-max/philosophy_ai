@@ -37,8 +37,7 @@ nav button, .modes button, .quiet { background: transparent; border: 1px solid t
 nav button, .modes button, .quiet, #send, #mobile-mode { font-size: var(--control-size); font-weight: 600; line-height: 1.4; letter-spacing: -.02em; }
 nav button { color: var(--muted); }
 nav button:hover, .quiet:hover, .modes button:hover { color: var(--gold); }
-nav button[aria-pressed="true"], .connection[aria-pressed="true"] { border-color: var(--gold); background: #b99a7216; color: var(--gold); }
-.connection { margin-left: auto; white-space: nowrap; }
+nav button[aria-pressed="true"] { border-color: var(--gold); background: #b99a7216; color: var(--gold); }
 .stage {
   position: relative; isolation: isolate; overflow: hidden;
   height: calc(100dvh - 4.5rem); min-height: 34rem;
@@ -120,7 +119,6 @@ button:disabled, textarea:disabled, select:disabled { color: var(--disabled); cu
   .seal { width: 1.35rem; height: 1.35rem; }
   nav { grid-column: 1 / -1; grid-row: 2; }
   nav button { padding: .38rem .55rem; }
-  .connection { grid-column: 2; grid-row: 1; }
   .stage { flex: 1; height: auto; min-height: 0; grid-template-columns: minmax(0, 1fr); grid-template-rows: var(--scene-height) minmax(0, 1fr); gap: 0; padding: 0 .45rem; transition: grid-template-rows 250ms ease; }
   .short-screen .stage { transition: none; }
   .backdrop { height: 22rem; object-position: center top; }

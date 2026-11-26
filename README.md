@@ -14,7 +14,7 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m streamlit run streamlit_app.py
 ```
 
-브라우저에서 [로컬 서재](http://localhost:8501)를 엽니다. 우측 상단 **테스트 모드**를 누르면 비밀 키 없이 네 철학자와 상담·공부를 시험할 수 있습니다. 실행을 종료하려면 PowerShell에서 Ctrl+C를 누릅니다.
+브라우저에서 [로컬 서재](http://localhost:8501)를 엽니다. 실행을 종료하려면 PowerShell에서 Ctrl+C를 누릅니다. 로컬에서 임시 응답을 확인하려면 실행 전 PowerShell에서 `$env:PHILOSOPHY_DEMO = '1'`을 설정합니다.
 
 실제 응답을 로컬에서 확인하려면 다음 명령으로 비밀 설정 파일을 만든 뒤, 해당하는 줄의 따옴표 사이에 실제 키를 입력하고 서버를 다시 실행합니다.
 

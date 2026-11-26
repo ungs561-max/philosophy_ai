@@ -167,7 +167,7 @@ function initialize(root, initial) {
   function setting() { return config?.profiles[id][mode]; }
   function available() { return Boolean(config && (test || setting()?.available)); }
   function controls() {
-    for (const button of [...nav.children, ...modes.children, $('test-mode')]) button.disabled = running;
+    for (const button of [...nav.children, ...modes.children]) button.disabled = running;
     mobileMode.disabled = running;
     $('mobile-reset').disabled = running;
     draft.disabled = running || !available();
@@ -186,7 +186,6 @@ function initialize(root, initial) {
     const studying = mode === 'study';
     for (const button of nav.children) button.setAttribute('aria-pressed', String(button.dataset.id === id));
     for (const button of modes.children) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
-    $('test-mode').setAttribute('aria-pressed', String(test));
     $('backdrop').src = art(id, 'background');
     $('name').textContent = profile.name;
     $('latin').textContent = `${profile.latin} · ${profile.school}`;
@@ -215,7 +214,7 @@ function initialize(root, initial) {
     resizeDraft();
     draft.placeholder = studying ? '어떤 철학 개념이 궁금한가요?' : '요즘 어떤 고민이 있나요?';
     status(test ? '임시 응답 테스트 중 · 실제 AI 답변이 아닙니다'
-      : config && !available() ? '연결 준비 중 · 테스트 모드에서 대화할 수 있습니다' : '');
+      : config && !available() ? '연결 준비 중입니다.' : '');
     preload(id);
     showPose(draft.value ? 'listening' : 'idle');
     controls();
@@ -243,7 +242,6 @@ function initialize(root, initial) {
     $('mobile-actions').open = false;
     $('reset').click();
   };
-  $('test-mode').onclick = () => { test = !test; render(); };
   draft.addEventListener('focus', () => {
     if (mobile.matches) collapseScene(true);
   });
