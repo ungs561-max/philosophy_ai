@@ -14,6 +14,9 @@ st.set_page_config(page_title="철학자의 서재", page_icon="📚", layout="w
 st.html("""<style>
 [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stDecoration"] { display:none; }
 [data-testid="stMainBlockContainer"] { padding:0; max-width:none; }
+@media (max-width: 800px) {
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stMain"] { overflow: hidden; }
+}
 </style>""")
 
 FRONTEND = ROOT / "frontend"

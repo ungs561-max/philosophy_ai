@@ -16,6 +16,7 @@ function initialize(root, initial) {
   const messages = $('messages');
   const scroll = $('panel-scroll');
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
+  const mobile = matchMedia('(max-width: 800px)');
   const art = (id, pose) => profiles[id].art[pose];
   const storageKey = 'philosophers-library-streamlit-v1';
   let stored;
@@ -33,6 +34,58 @@ function initialize(root, initial) {
   let skipTyping = false;
   let portraitVersion = 0;
   const loaded = new Map();
+
+  const sceneToggle = $('scene-toggle');
+  const dailyToggle = $('daily-toggle');
+  function collapseScene(collapsed) {
+    root.classList.toggle('scene-collapsed', collapsed);
+    sceneToggle.setAttribute('aria-expanded', String(!collapsed));
+    sceneToggle.firstElementChild.textContent = collapsed ? '일러스트 펼치기' : '일러스트 접기';
+  }
+  sceneToggle.onclick = () => collapseScene(!root.classList.contains('scene-collapsed'));
+  dailyToggle.onclick = () => dailyToggle.setAttribute('aria-expanded', String(dailyToggle.getAttribute('aria-expanded') !== 'true'));
+
+  function resizeDraft() {
+    draft.style.height = '';
+    if (!mobile.matches) return;
+    const border = draft.offsetHeight - draft.clientHeight;
+    draft.style.height = `${draft.scrollHeight + border}px`;
+  }
+
+  let outerViewport;
+  let frame;
+  try {
+    if (window.parent !== window) {
+      outerViewport = window.parent.visualViewport;
+      frame = window.frameElement;
+      root.classList.toggle('cloud-frame', location.pathname.includes('/~/+/'));
+    }
+  } catch { /* A cross-origin frame can only measure its own viewport. */ }
+  const viewportEvents = new AbortController();
+  function syncViewport() {
+    if (!root.isConnected) {
+      viewportEvents.abort();
+      return;
+    }
+    if (!mobile.matches) {
+      root.style.removeProperty('--mobile-height');
+      root.classList.remove('short-screen');
+      resizeDraft();
+      return;
+    }
+    const height = window.visualViewport?.height ?? window.innerHeight;
+    const available = outerViewport && frame
+      ? Math.min(height, outerViewport.height - Math.max(0, frame.getBoundingClientRect().top - outerViewport.offsetTop))
+      : height;
+    root.style.setProperty('--mobile-height', `${Math.floor(Math.max(0, available))}px`);
+    root.classList.toggle('short-screen', available < 500);
+    resizeDraft();
+  }
+  const options = { signal: viewportEvents.signal };
+  window.addEventListener('resize', syncViewport, options);
+  window.visualViewport?.addEventListener('resize', syncViewport, options);
+  outerViewport?.addEventListener('resize', syncViewport, options);
+  outerViewport?.addEventListener('scroll', syncViewport, options);
 
   function context() { return `${test ? 'test' : 'dify'}:${id}:${mode}`; }
   function history() { return histories[context()] ??= { messages: [], conversationId: '' }; }
@@ -89,6 +142,7 @@ function initialize(root, initial) {
     return body;
   }
   function bottom() { scroll.scrollTop = scroll.scrollHeight; }
+  function nearBottom() { return scroll.scrollHeight - scroll.clientHeight - scroll.scrollTop <= 32; }
   function status(text) { $('status').textContent = text; }
   function setting() { return config?.profiles[id][mode]; }
   function available() { return Boolean(config && (test || setting()?.available)); }
@@ -115,6 +169,8 @@ function initialize(root, initial) {
     $('daily').hidden = !card;
     if (card) {
       $('daily-title').textContent = studying ? '오늘의 철학 개념' : '오늘의 명언';
+      dailyToggle.textContent = studying ? '오늘의 철학 개념' : '오늘의 명언 · 성찰 질문';
+      dailyToggle.setAttribute('aria-expanded', 'false');
       $('daily-main').textContent = studying ? card.term : `“${card.quote}”`;
       $('daily-source').textContent = studying ? `${card.philosopher} · 개념 요약` : `— ${card.philosopher}`;
       $('daily-detail').textContent = studying ? card.explanation : `성찰 질문 · ${card.question}`;
@@ -128,6 +184,7 @@ function initialize(root, initial) {
     scroll.scrollTop = 0;
     if (history().messages.length) bottom();
     draft.value = drafts[context()] || '';
+    resizeDraft();
     draft.placeholder = studying ? '어떤 철학 개념이 궁금한가요?' : '요즘 어떤 고민이 있나요?';
     status(test ? '임시 응답 테스트 중 · 실제 AI 답변이 아닙니다'
       : config && !available() ? '연결 준비 중 · 테스트 모드에서 대화할 수 있습니다' : '');
@@ -146,13 +203,17 @@ function initialize(root, initial) {
   }
   for (const button of modes.children) button.onclick = () => { mode = button.dataset.mode; render(); };
   $('test-mode').onclick = () => { test = !test; render(); };
+  draft.addEventListener('focus', () => {
+    if (mobile.matches) collapseScene(true);
+  });
   draft.addEventListener('input', () => {
     drafts[context()] = draft.value;
+    resizeDraft();
     showPose(draft.value ? 'listening' : 'idle');
     controls();
   });
   draft.addEventListener('keydown', event => {
-    if (event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
+    if (!mobile.matches && event.key === 'Enter' && !event.shiftKey && !event.isComposing && event.keyCode !== 229) {
       event.preventDefault();
       $('form').requestSubmit();
     }
@@ -195,6 +256,7 @@ function initialize(root, initial) {
     if (running || !available() || (!fromCard && !text)) return;
     if (fromCard && history().messages.length && !confirm('이 주제로 새 대화를 시작할까요?')) return;
     running = true;
+    if (mobile.matches) collapseScene(true);
     skipTyping = false;
     const current = history();
     const card = setting().card;
@@ -205,6 +267,7 @@ function initialize(root, initial) {
       : text;
     delete drafts[context()];
     draft.value = '';
+    resizeDraft();
     controls();
     if (fromCard || !current.messages.length) messages.replaceChildren();
     scroll.classList.remove('welcome');
@@ -216,13 +279,14 @@ function initialize(root, initial) {
     let reply;
     let conversationId = fromCard ? '' : current.conversationId;
     function output(value) {
+      const follow = !mobile.matches || nearBottom();
       if (!reply) {
         reply = message('assistant', '');
         showPose('speaking');
         status(test ? '임시 테스트 응답을 표시하고 있습니다…' : '답변을 받고 있습니다…');
       }
       reply.textContent = value;
-      bottom();
+      if (follow) bottom();
     }
     try {
       const result = await waitForDialogue({ id, mode, fromCard, text, user, conversationId, test }, output);
@@ -261,6 +325,7 @@ function initialize(root, initial) {
 
   test = config.demo;
   render();
+  syncViewport();
   const warmOtherScenes = () => {
     for (const key of Object.keys(profiles)) {
       if (key !== id) {

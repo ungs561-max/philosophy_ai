@@ -6,9 +6,10 @@
   </header>
   <main class="stage">
     <img class="backdrop" id="backdrop" alt="">
-    <div class="scenery" aria-hidden="true">
-      <div id="portraits" class="portraits" data-state="idle"></div>
-      <div class="location"><span id="era"></span><strong id="place"></strong></div>
+    <div class="scenery">
+      <div id="portraits" class="portraits" data-state="idle" aria-hidden="true"></div>
+      <div class="location" aria-hidden="true"><span id="era"></span><strong id="place"></strong></div>
+      <button id="scene-toggle" class="mobile-only" type="button" aria-controls="portraits" aria-expanded="true"><span>일러스트 접기</span></button>
     </div>
     <section class="panel" aria-labelledby="name">
       <div class="panel-head">
@@ -25,11 +26,14 @@
       </div>
       <div class="panel-scroll" id="panel-scroll" tabindex="0" aria-label="대화 및 성찰 카드">
         <aside class="daily" id="daily" hidden>
-          <div class="eyebrow" id="daily-title"></div>
-          <p id="daily-main"></p>
-          <p id="daily-source"></p>
-          <p id="daily-detail"></p>
-          <button id="daily-action" class="quiet" type="button"></button>
+          <button id="daily-toggle" class="mobile-only quiet" type="button" aria-controls="daily-content" aria-expanded="false"></button>
+          <div id="daily-content">
+            <div class="eyebrow" id="daily-title"></div>
+            <p id="daily-main"></p>
+            <p id="daily-source"></p>
+            <p id="daily-detail"></p>
+            <button id="daily-action" class="quiet" type="button"></button>
+          </div>
         </aside>
         <div id="messages" class="messages" aria-label="대화 기록"></div>
       </div>
@@ -40,7 +44,7 @@
         </div>
         <form id="form">
           <textarea id="draft" rows="2" maxlength="4000" aria-label="메시지" placeholder="요즘 어떤 고민이 있나요?" disabled></textarea>
-          <button id="send" type="submit" disabled>전송</button>
+          <button id="send" type="submit" aria-label="전송" disabled><span class="send-label">전송</span><span class="mobile-only send-arrow" aria-hidden="true">↑</span></button>
         </form>
       </div>
     </section>
