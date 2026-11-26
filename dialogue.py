@@ -4,7 +4,6 @@ import re
 import time
 from datetime import datetime
 from pathlib import Path
-from urllib.parse import quote
 from zoneinfo import ZoneInfo
 
 import requests
@@ -23,9 +22,9 @@ ENDPOINT = "https://api.dify.ai/v1/chat-messages"
 UUID = re.compile(r"[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}", re.I)
 
 
-def picture_urls(profile):
+def picture_paths(profile):
     return {
-        pose: "./app/static/" + quote(f"{profile['folder']}/{image}.png", safe="/")
+        pose: ROOT / "static" / profile["folder"] / f"{image}.png"
         for pose, image in zip(POSES, profile["images"], strict=True)
     }
 

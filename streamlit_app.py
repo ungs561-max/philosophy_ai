@@ -3,10 +3,11 @@ import os
 from threading import Lock, Thread
 
 import streamlit as st
+from streamlit import runtime
 
 from dialogue import (
     MODES, PROFILES, ROOT, SECRET_NAMES, UUID, DialogueError,
-    daily_cards, picture_urls, run_dialogue,
+    daily_cards, picture_paths, run_dialogue,
 )
 
 st.set_page_config(page_title="철학자의 서재", page_icon="📚", layout="wide")
@@ -98,9 +99,15 @@ def component_renderer():
 
 
 cards = daily_cards()
+media = runtime.get_instance().media_file_mgr
 public_profiles = {
     slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting")},
-           "art": picture_urls(profile)}
+           # Use Streamlit's media route with the browser's current app prefix,
+           # including the prefix when Community Cloud embeds the app.
+           "art": {
+               pose: "." + media.add(str(path), "image/png", f"philosopher-{slug}-{pose}")
+               for pose, path in picture_paths(profile).items()
+           }}
     for slug, profile in PROFILES.items()
 }
 config = {
@@ -111,10 +118,18 @@ config = {
         for slug, names in SECRET_NAMES.items()
     },
 }
-job = st.session_state.get("dialogue_job")
-component_renderer()(
-    key=COMPONENT_KEY,
-    data={"profiles": public_profiles, "config": config, "snapshot": job.snapshot() if job else None},
-    on_request_change=start_request,
-    on_poll_change=lambda: None,
-)
+
+
+@st.fragment
+def render_library():
+    # Polling reruns only this fragment so it does not reread the PNGs.
+    job = st.session_state.get("dialogue_job")
+    component_renderer()(
+        key=COMPONENT_KEY,
+        data={"profiles": public_profiles, "config": config, "snapshot": job.snapshot() if job else None},
+        on_request_change=start_request,
+        on_poll_change=lambda: None,
+    )
+
+
+render_library()
