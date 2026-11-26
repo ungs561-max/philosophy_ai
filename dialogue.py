@@ -33,14 +33,25 @@ def read_quotes():
     content = (ROOT / "quotes.txt").read_text(encoding="utf-8-sig")
     for block in re.split(r"^\s*-\s*명언\s*:\s*", content, flags=re.M)[1:]:
         lines = [line.strip() for line in block.splitlines() if line.strip()]
+        fields = {}
         for line in lines[1:-1]:
-            question = re.match(r"-?\s*성찰 질문\s*:\s*(.+)", line)
-            if question:
-                yield dict(quote=lines[0].strip('"“”'), question=question[1], philosopher=lines[-1])
-                break
+            match = re.fullmatch(r"-?\s*(성찰 질문|배정 철학자)\s*:\s*(.+)", line)
+            if match:
+                key, value = match.groups()
+                fields[key] = value.strip()
+        if len(lines) >= 3 and fields.get("성찰 질문"):
+            quote = lines[0].strip('"“”')
+            author = lines[-1]
+            owner = fields.get("배정 철학자", author)
+            card_id = hashlib.sha256(f"{author}\0{quote}".encode()).hexdigest()[:24]
+            yield owner, card_id, dict(id=card_id, quote=quote, question=fields["성찰 질문"], philosopher=author)
 
 
-QUOTES = list(read_quotes())
+quotes_by_name = {profile["name"]: {} for profile in PROFILES.values()}
+for owner, card_id, card in read_quotes():
+    if owner in quotes_by_name:
+        quotes_by_name[owner][card_id] = card
+QUOTES = {slug: quotes_by_name[profile["name"]] for slug, profile in PROFILES.items()}
 
 
 def daily_cards():
@@ -48,10 +59,8 @@ def daily_cards():
     index = int(hashlib.sha256(today.encode()).hexdigest(), 16)
     result = {}
     for slug, profile in PROFILES.items():
-        quotes = [card for card in QUOTES if profile["name"] in card["philosopher"]] or QUOTES
         concept = (profile["concept"], profile["nextConcept"])[index % 2]
         result[slug] = {
-            "counsel": quotes[index % len(quotes)] if quotes else None,
             "study": dict(zip(("term", "explanation", "philosopher", "topic"), concept)),
         }
     return result

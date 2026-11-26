@@ -24,6 +24,7 @@ function initialize(root, initial) {
   try { stored = JSON.parse(sessionStorage.getItem(storageKey)); } catch { /* Fresh browser session. */ }
   const user = stored?.user || crypto.randomUUID();
   const histories = stored?.histories || {};
+  const quoteDecks = stored?.quoteDecks || {};
   const drafts = {};
   let id = 'epictetus';
   let mode = 'counsel';
@@ -91,8 +92,28 @@ function initialize(root, initial) {
   function context() { return `${test ? 'test' : 'dify'}:${id}:${mode}`; }
   function history() { return histories[context()] ??= { messages: [], conversationId: '' }; }
   function persist() {
-    try { sessionStorage.setItem(storageKey, JSON.stringify({ user, histories })); } catch { /* Continue in memory. */ }
+    try { sessionStorage.setItem(storageKey, JSON.stringify({ user, histories, quoteDecks })); } catch { /* Continue in memory. */ }
   }
+  function selectedQuote(advance = false) {
+    const cards = config.quotes[id];
+    if (!cards.length) return null;
+    const deck = quoteDecks[id] ??= { current: null, seen: [] };
+    const current = cards.find(card => card.id === deck.current);
+    if (current && !advance) return current;
+    const seen = new Set(deck.seen);
+    let remaining = cards.filter(card => !seen.has(card.id));
+    if (!remaining.length) {
+      deck.seen = [];
+      remaining = cards.filter(card => card.id !== deck.current || cards.length === 1);
+    }
+    const next = remaining[Math.floor(Math.random() * remaining.length)];
+    deck.current = next.id;
+    deck.seen.push(next.id);
+    persist();
+    return next;
+  }
+
+  function currentCard() { return mode === 'counsel' ? selectedQuote() : setting()?.card; }
   function imageFor(key, pose) {
     const src = art(key, pose);
     if (!loaded.has(src)) {
@@ -182,7 +203,7 @@ function initialize(root, initial) {
     modes.hidden = !canStudy;
     mobileMode.hidden = !canStudy;
     mobileMode.value = mode;
-    const card = setting()?.card;
+    const card = currentCard();
     const studying = mode === 'study';
     for (const button of nav.children) button.setAttribute('aria-pressed', String(button.dataset.id === id));
     for (const button of modes.children) button.setAttribute('aria-pressed', String(button.dataset.mode === mode));
@@ -264,6 +285,7 @@ function initialize(root, initial) {
     if (!history().messages.length || confirm('현재 철학자와 모드의 대화를 지우고 새로 시작할까요?')) {
       delete histories[context()];
       delete drafts[context()];
+      selectedQuote(true);
       persist();
       render();
     }
@@ -298,7 +320,7 @@ function initialize(root, initial) {
     if (mobile.matches) collapseScene(true);
     skipTyping = false;
     const current = history();
-    const card = setting().card;
+    const card = currentCard();
     const display = fromCard
       ? mode === 'study'
         ? `오늘의 철학 개념 '${card.term}'을 공부하고 싶어요.`
@@ -328,7 +350,7 @@ function initialize(root, initial) {
       if (follow) bottom();
     }
     try {
-      const result = await waitForDialogue({ id, mode, fromCard, text, user, conversationId, test }, output);
+      const result = await waitForDialogue({ id, mode, fromCard, text, user, conversationId, test, quoteId: fromCard ? card?.id : undefined }, output);
       answer = result.answer;
       if (typeof answer !== 'string' || !answer.trim()) throw new Error('답변이 비어 있습니다.');
       question.textContent = result.display ?? display;

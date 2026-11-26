@@ -7,7 +7,7 @@ import streamlit as st
 from streamlit import runtime
 
 from dialogue import (
-    MODES, PROFILES, ROOT, SECRET_NAMES, UUID, DialogueError,
+    MODES, PROFILES, QUOTES, ROOT, SECRET_NAMES, UUID, DialogueError,
     daily_cards, picture_paths, run_dialogue,
 )
 
@@ -81,7 +81,12 @@ def start_request():
     job = DialogueJob(value["requestId"])
     st.session_state.dialogue_job = job
     key = None if value["test"] else secret(SECRET_NAMES[value["id"]][MODES.index(value["mode"])])
-    card = daily_cards()[value["id"]][value["mode"]]
+    slug, mode = value["id"], value["mode"]
+    quote_id = value.get("quoteId")
+    if mode == "study":
+        card = daily_cards()[slug][mode]
+    else:
+        card = QUOTES[slug].get(quote_id) if isinstance(quote_id, str) else None
 
     def work():
         try:
@@ -141,10 +146,11 @@ config = {
     "demo": DEMO_ENABLED,
     "studyEnabled": sorted(STUDY_ENABLED),
     "profiles": {
-        slug: {mode: {"available": bool(secret(name)), "card": cards[slug][mode]}
+        slug: {mode: {"available": bool(secret(name)), "card": cards[slug].get(mode)}
                for mode, name in zip(MODES, names, strict=True)}
         for slug, names in SECRET_NAMES.items()
     },
+    "quotes": {slug: list(pool.values()) for slug, pool in QUOTES.items()},
 }
 renderer = component_renderer(*(
     (FRONTEND / name).read_text(encoding="utf-8-sig")
