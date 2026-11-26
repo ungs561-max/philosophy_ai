@@ -1,0 +1,48 @@
+<div class="library">
+  <header class="masthead">
+    <div class="brand"><span class="seal" aria-hidden="true">✦</span>철학자의 서재</div>
+    <nav id="philosophers" aria-label="철학자 선택"></nav>
+    <button id="test-mode" class="connection quiet" type="button" aria-pressed="false">테스트 모드</button>
+  </header>
+  <main class="stage">
+    <img class="backdrop" id="backdrop" alt="">
+    <div class="scenery" aria-hidden="true">
+      <div id="portraits" class="portraits" data-state="idle"></div>
+      <div class="location"><span id="era"></span><strong id="place"></strong></div>
+    </div>
+    <section class="panel" aria-labelledby="name">
+      <div class="panel-head">
+        <div class="identity">
+          <div id="latin" class="eyebrow"></div>
+          <h1 id="name">에픽테토스</h1>
+          <p id="intro"></p>
+        </div>
+        <button id="reset" class="quiet reset" type="button">새 대화</button>
+      </div>
+      <div id="modes" class="modes" role="group" aria-label="대화 모드">
+        <button type="button" data-mode="counsel" aria-pressed="true">철학 상담</button>
+        <button type="button" data-mode="study" aria-pressed="false">철학 공부</button>
+      </div>
+      <div class="panel-scroll" id="panel-scroll" tabindex="0" aria-label="대화 및 성찰 카드">
+        <aside class="daily" id="daily" hidden>
+          <div class="eyebrow" id="daily-title"></div>
+          <p id="daily-main"></p>
+          <p id="daily-source"></p>
+          <p id="daily-detail"></p>
+          <button id="daily-action" class="quiet" type="button"></button>
+        </aside>
+        <div id="messages" class="messages" aria-label="대화 기록"></div>
+      </div>
+      <div class="composer">
+        <div class="status-line">
+          <span id="status" role="status"></span>
+          <button id="skip" type="button" class="quiet" hidden>답변 바로 보기</button>
+        </div>
+        <form id="form">
+          <textarea id="draft" rows="2" maxlength="4000" aria-label="메시지" placeholder="요즘 어떤 고민이 있나요?" disabled></textarea>
+          <button id="send" type="submit" disabled>전송</button>
+        </form>
+      </div>
+    </section>
+  </main>
+</div>
