@@ -129,6 +129,24 @@ function initialize(root, initial) {
     for (const pose of poses) imageFor(id, pose);
   }
 
+  function setAssistantText(body, text) {
+    const lines = text.split('\n');
+    body.replaceChildren();
+    for (const [index, line] of lines.entries()) {
+      if (index) body.append('\n');
+      // Only style clearly delimited quotation lines; keep normal prose in Pretendard.
+      const marked = /^\s*>\s+(.+)$/.exec(line);
+      if (marked || /^\s*“[^”]+”\s*$/.test(line)) {
+        const quote = document.createElement('span');
+        quote.className = 'source-quote';
+        quote.textContent = marked ? marked[1] : line;
+        body.append(quote);
+      } else {
+        body.append(line);
+      }
+    }
+  }
+
   function message(role, text, greeting = false) {
     const article = document.createElement('article');
     article.className = `message ${role}`;
@@ -137,7 +155,8 @@ function initialize(root, initial) {
     label.textContent = role === 'user' ? '나' : profiles[id].name;
     if (test && role === 'assistant' && !greeting) label.textContent += ' · 테스트 응답';
     const body = document.createElement('p');
-    body.textContent = text;
+    if (role === 'assistant') setAssistantText(body, text);
+    else body.textContent = text;
     article.append(label, body);
     messages.append(article);
     return body;
@@ -180,6 +199,7 @@ function initialize(root, initial) {
       dailyToggle.textContent = studying ? '오늘의 철학 개념' : '오늘의 명언 · 성찰 질문';
       dailyToggle.setAttribute('aria-expanded', 'false');
       $('daily-main').textContent = studying ? card.term : `“${card.quote}”`;
+      $('daily-main').classList.toggle('source-quote', !studying);
       $('daily-source').textContent = studying ? `${card.philosopher} · 개념 요약` : `— ${card.philosopher}`;
       $('daily-detail').textContent = studying ? card.explanation : `성찰 질문 · ${card.question}`;
       $('daily-action').textContent = studying ? '이 개념을 공부하기' : '이 질문으로 대화하기';
@@ -306,7 +326,7 @@ function initialize(root, initial) {
         showPose('speaking');
         status(test ? '임시 테스트 응답을 표시하고 있습니다…' : '답변을 받고 있습니다…');
       }
-      reply.textContent = value;
+      setAssistantText(reply, value);
       if (follow) bottom();
     }
     try {

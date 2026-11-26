@@ -105,6 +105,26 @@ def component_renderer(html, css, js):
 
 cards = daily_cards()
 media = runtime.get_instance().media_file_mgr
+font_directory = ROOT / "static" / "fonts"
+pretendard_url = media.add(str(font_directory / "PretendardVariable.woff2"), "font/woff2", "library-font-pretendard")
+ridi_url = media.add(str(font_directory / "RIDIBatang.otf"), "font/otf", "library-font-ridibatang")
+# Register the faces in the document so the shadow-root component can use them.
+st.html(f"""<style>
+@font-face {{
+    font-family: "Pretendard";
+    src: url(".{pretendard_url}") format("woff2");
+    font-style: normal;
+    font-weight: 100 900;
+    font-display: swap;
+}}
+@font-face {{
+    font-family: "RIDIBatang";
+    src: url(".{ridi_url}") format("opentype");
+    font-style: normal;
+    font-weight: 400;
+    font-display: swap;
+}}
+</style>""")
 public_profiles = {
     slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting")},
            # Use Streamlit's media route with the browser's current app prefix,
