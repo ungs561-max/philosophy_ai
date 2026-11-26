@@ -1,5 +1,6 @@
 import logging
 import os
+from hashlib import sha256
 from threading import Lock, Thread
 
 import streamlit as st
@@ -21,6 +22,7 @@ st.html("""<style>
 
 FRONTEND = ROOT / "frontend"
 COMPONENT_KEY = "philosopher_library"
+STUDY_ENABLED = frozenset({"epictetus"})
 
 
 def secret(name):
@@ -51,6 +53,8 @@ def valid_payload(value):
         return False
     slug, mode = value.get("id"), value.get("mode")
     if not isinstance(slug, str) or slug not in PROFILES or mode not in MODES:
+        return False
+    if mode == "study" and slug not in STUDY_ENABLED:
         return False
     for name in ("requestId", "user", "conversationId"):
         token = value.get(name)
@@ -92,12 +96,10 @@ def start_request():
 
 
 @st.cache_resource
-def component_renderer():
+def component_renderer(html, css, js):
+    revision = sha256("\0".join((html, css, js)).encode()).hexdigest()[:16]
     return st.components.v2.component(
-        COMPONENT_KEY,
-        html=(FRONTEND / "index.html").read_text(encoding="utf-8-sig"),
-        css=(FRONTEND / "styles.css").read_text(encoding="utf-8-sig"),
-        js=(FRONTEND / "app.mjs").read_text(encoding="utf-8-sig"),
+        f"{COMPONENT_KEY}_{revision}", html=html, css=css, js=js,
     )
 
 
@@ -115,19 +117,24 @@ public_profiles = {
 }
 config = {
     "demo": os.environ.get("PHILOSOPHY_DEMO") == "1",
+    "studyEnabled": sorted(STUDY_ENABLED),
     "profiles": {
         slug: {mode: {"available": bool(secret(name)), "card": cards[slug][mode]}
                for mode, name in zip(MODES, names, strict=True)}
         for slug, names in SECRET_NAMES.items()
     },
 }
+renderer = component_renderer(*(
+    (FRONTEND / name).read_text(encoding="utf-8-sig")
+    for name in ("index.html", "styles.css", "app.mjs")
+))
 
 
 @st.fragment
 def render_library():
     # Polling reruns only this fragment so it does not reread the PNGs.
     job = st.session_state.get("dialogue_job")
-    component_renderer()(
+    renderer(
         key=COMPONENT_KEY,
         data={"profiles": public_profiles, "config": config, "snapshot": job.snapshot() if job else None},
         on_request_change=start_request,

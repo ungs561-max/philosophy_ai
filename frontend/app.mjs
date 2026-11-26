@@ -12,6 +12,7 @@ function initialize(root, initial) {
   const $ = id => root.querySelector('#' + id);
   const nav = $('philosophers');
   const modes = $('modes');
+  const mobileMode = $('mobile-mode');
   const draft = $('draft');
   const messages = $('messages');
   const scroll = $('panel-scroll');
@@ -148,6 +149,8 @@ function initialize(root, initial) {
   function available() { return Boolean(config && (test || setting()?.available)); }
   function controls() {
     for (const button of [...nav.children, ...modes.children, $('test-mode')]) button.disabled = running;
+    mobileMode.disabled = running;
+    $('mobile-reset').disabled = running;
     draft.disabled = running || !available();
     $('send').disabled = draft.disabled || !draft.value.trim();
     $('daily-action').disabled = draft.disabled;
@@ -155,6 +158,11 @@ function initialize(root, initial) {
   }
   function render() {
     const profile = profiles[id];
+    const canStudy = config.studyEnabled.includes(id);
+    if (!canStudy) mode = 'counsel';
+    modes.hidden = !canStudy;
+    mobileMode.hidden = !canStudy;
+    mobileMode.value = mode;
     const card = setting()?.card;
     const studying = mode === 'study';
     for (const button of nav.children) button.setAttribute('aria-pressed', String(button.dataset.id === id));
@@ -202,6 +210,19 @@ function initialize(root, initial) {
     nav.append(button);
   }
   for (const button of modes.children) button.onclick = () => { mode = button.dataset.mode; render(); };
+  mobileMode.onchange = () => { mode = mobileMode.value; render(); };
+  $('show-profile').onclick = () => {
+    const profile = profiles[id];
+    $('mobile-actions').open = false;
+    $('profile-name').textContent = profile.name;
+    $('profile-school').textContent = `${profile.latin} · ${profile.school}`;
+    $('profile-intro').textContent = profile.intro;
+    $('profile-details').showModal();
+  };
+  $('mobile-reset').onclick = () => {
+    $('mobile-actions').open = false;
+    $('reset').click();
+  };
   $('test-mode').onclick = () => { test = !test; render(); };
   draft.addEventListener('focus', () => {
     if (mobile.matches) collapseScene(true);

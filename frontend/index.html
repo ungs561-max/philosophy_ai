@@ -19,7 +19,24 @@
           <p id="intro"></p>
         </div>
         <button id="reset" class="quiet reset" type="button">새 대화</button>
+        <select id="mobile-mode" class="mobile-only" aria-label="대화 모드">
+          <option value="counsel">철학 상담</option>
+          <option value="study">철학 공부</option>
+        </select>
+        <details id="mobile-actions" class="mobile-only">
+          <summary aria-label="대화 옵션">⋯</summary>
+          <div class="extra-actions">
+            <button id="mobile-reset" type="button" class="quiet">새 대화</button>
+            <button id="show-profile" type="button" class="quiet">철학자 소개</button>
+          </div>
+        </details>
       </div>
+      <dialog id="profile-details" aria-labelledby="profile-name">
+        <h2 id="profile-name"></h2>
+        <p id="profile-school"></p>
+        <p id="profile-intro"></p>
+        <form method="dialog"><button class="quiet">닫기</button></form>
+      </dialog>
       <div id="modes" class="modes" role="group" aria-label="대화 모드">
         <button type="button" data-mode="counsel" aria-pressed="true">철학 상담</button>
         <button type="button" data-mode="study" aria-pressed="false">철학 공부</button>
