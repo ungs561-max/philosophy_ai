@@ -1,9 +1,10 @@
-const instances = new WeakMap();
+const instanceKey = Symbol.for('philosophers-library.component-instance');
 export default function mount(component) {
   const root = component.parentElement.querySelector('.library');
-  if (!root) return;
-  if (!instances.has(root)) instances.set(root, initialize(root, component.data));
-  instances.get(root)(component);
+  if (!root || !component.data) return;
+  // Streamlit can reevaluate this module while retaining the same DOM.
+  root[instanceKey] ??= initialize(root, component.data);
+  root[instanceKey](component);
 }
 
 function initialize(root, initial) {
@@ -241,14 +242,16 @@ function initialize(root, initial) {
     controls();
   }
 
+  const philosopherButtons = document.createDocumentFragment();
   for (const [key, profile] of Object.entries(profiles)) {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.id = key;
     button.textContent = profile.name;
     button.onclick = () => { id = key; render(); };
-    nav.append(button);
+    philosopherButtons.append(button);
   }
+  nav.replaceChildren(philosopherButtons);
   for (const button of modes.children) button.onclick = () => { mode = button.dataset.mode; render(); };
   mobileMode.onchange = () => { mode = mobileMode.value; render(); };
   $('show-profile').onclick = () => {
