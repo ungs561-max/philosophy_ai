@@ -139,7 +139,7 @@ avatar_names = {
     "camus": "albert_camus",
 }
 public_profiles = {
-    slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting", "detailed_description")},
+    slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting", "detailed_description", "waiting_messages")},
            # Use Streamlit's media route with the browser's current app prefix,
            # including the prefix when Community Cloud embeds the app.
            "avatar": "." + media.add(

@@ -172,9 +172,7 @@ function initialize(root, initial) {
     }
   }
 
-  function message(role, text, greeting = false) {
-    const article = document.createElement('article');
-    article.className = `message ${role}`;
+  function speaker(role, greeting) {
     const label = document.createElement('span');
     label.className = 'speaker';
     label.textContent = role === 'user' ? '나' : profiles[id].name;
@@ -189,15 +187,67 @@ function initialize(root, initial) {
       label.prepend(avatar);
       avatar.src = profiles[id].avatar;
     }
+    return label;
+  }
+
+  function message(role, text, greeting = false) {
+    const article = document.createElement('article');
+    article.className = `message ${role}`;
     const body = document.createElement('p');
     if (role === 'assistant') setAssistantText(body, text);
     else body.textContent = text;
-    article.append(label, body);
+    article.append(speaker(role, greeting), body);
     messages.append(article);
     return body;
   }
   function bottom() { scroll.scrollTop = scroll.scrollHeight; }
   function nearBottom() { return scroll.scrollHeight - scroll.clientHeight - scroll.scrollTop <= 32; }
+  const waitingInterval = 5000;
+  const sensitiveWaiting = /자살|자해|극단적\s*선택|죽\s*고\s*싶|죽\s*을\s*거|살\s*기\s*싫|목숨을\s*끊|살해|학대|성폭력|가정폭력|폭행|협박|트라우마|공황|중환자|사망|유산|suicid|self[ -]?harm|kill myself|want to die|sexual assault|domestic violence/i;
+  let stopWaiting = () => {};
+
+  function startWaiting(text, startedAt) {
+    stopWaiting();
+    const lines = sensitiveWaiting.test(text.normalize('NFKC'))
+      ? ['답변을 준비하고 있습니다…']
+      : profiles[id].waiting_messages;
+    const item = document.createElement('div');
+    item.className = 'message assistant waiting-message';
+    const copy = document.createElement('div');
+    copy.className = 'waiting-copy';
+    copy.setAttribute('role', 'status');
+    const dots = document.createElement('span');
+    dots.className = 'waiting-dots';
+    dots.setAttribute('aria-hidden', 'true');
+    for (let i = 0; i < 3; i++) dots.append(document.createElement('span'));
+    item.append(speaker('assistant', true), copy, dots);
+    messages.append(item);
+    let timer;
+    const stop = () => {
+      clearTimeout(timer);
+      item.remove();
+      window.removeEventListener('pagehide', stop);
+      stopWaiting = () => {};
+    };
+    stopWaiting = stop;
+    window.addEventListener('pagehide', stop, { once: true });
+
+    function tick() {
+      if (!item.isConnected || $('portraits').dataset.state !== 'thinking') {
+        stop();
+        return;
+      }
+      const elapsed = performance.now() - startedAt;
+      const step = Math.min(Math.floor(elapsed / waitingInterval), lines.length - 1);
+      const follow = nearBottom();
+      const line = document.createElement('span');
+      line.textContent = lines[step];
+      copy.replaceChildren(line);
+      if (follow) bottom();
+      if (step < lines.length - 1) timer = setTimeout(tick, (step + 1) * waitingInterval - elapsed);
+    }
+    tick();
+  }
   function status(text) { $('status').textContent = text; }
   function setting() { return config?.profiles[id][mode]; }
   function available() { return Boolean(config && (test || setting()?.available)); }
@@ -221,6 +271,7 @@ function initialize(root, initial) {
   profileToggle.onclick = () => setProfileExpanded(profileDetails.inert);
 
   function render() {
+    stopWaiting();
     const profile = profiles[id];
     const canStudy = config.studyEnabled.includes(id);
     if (!canStudy) mode = 'counsel';
@@ -348,6 +399,8 @@ function initialize(root, initial) {
     const text = draft.value.trim();
     if (running || !available() || (!fromCard && !text)) return;
     if (fromCard && history().messages.length && !confirm('이 주제로 새 대화를 시작할까요?')) return;
+    const startedAt = performance.now();
+    const followOnSend = nearBottom();
     running = true;
     if (mobile.matches) collapseScene(true);
     skipTyping = false;
@@ -366,14 +419,16 @@ function initialize(root, initial) {
     scroll.classList.remove('welcome');
     const question = message('user', display);
     showPose('thinking');
-    status(`${profiles[id].name} 님이 생각하고 있습니다…`);
-    bottom();
+    status('');
+    startWaiting(display, startedAt);
+    if (followOnSend || fromCard || !current.messages.length) bottom();
     let answer = '';
     let reply;
     let conversationId = fromCard ? '' : current.conversationId;
     function output(value) {
-      const follow = !mobile.matches || nearBottom();
+      const follow = nearBottom();
       if (!reply) {
+        stopWaiting();
         reply = message('assistant', '');
         showPose('speaking');
         status(test ? '임시 테스트 응답을 표시하고 있습니다…' : '답변을 받고 있습니다…');
@@ -409,6 +464,7 @@ function initialize(root, initial) {
       render();
       status(error instanceof TypeError ? '연결 오류가 발생했습니다. 다시 시도해 주세요.' : error.message);
     } finally {
+      stopWaiting();
       running = false;
       $('skip').hidden = true;
       showPose('idle');
