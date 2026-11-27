@@ -17,6 +17,9 @@ function initialize(root, initial) {
   const draft = $('draft');
   const messages = $('messages');
   const scroll = $('panel-scroll');
+  const profileToggle = $('profile-toggle');
+  const profileDetails = $('profile-details');
+  let displayedProfile;
   const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width: 800px)');
   const art = (id, pose) => profiles[id].art[pose];
@@ -197,6 +200,16 @@ function initialize(root, initial) {
     $('daily-action').disabled = draft.disabled;
     $('reset').disabled = running;
   }
+  function setProfileExpanded(expanded) {
+    profileToggle.setAttribute('aria-expanded', String(expanded));
+    profileToggle.firstElementChild.textContent = expanded ? '▴' : '▾';
+    profileDetails.classList.toggle('expanded', expanded);
+    profileDetails.inert = !expanded;
+    if (expanded) scroll.scrollTop = 0;
+  }
+
+  profileToggle.onclick = () => setProfileExpanded(profileDetails.inert);
+
   function render() {
     const profile = profiles[id];
     const canStudy = config.studyEnabled.includes(id);
@@ -212,6 +225,15 @@ function initialize(root, initial) {
     $('name').textContent = profile.name;
     $('latin').textContent = `${profile.latin} · ${profile.school}`;
     $('intro').textContent = profile.intro;
+    if (displayedProfile !== id) {
+      displayedProfile = id;
+      setProfileExpanded(false);
+      $('profile-paragraphs').replaceChildren(...profile.detailed_description.map(text => {
+        const paragraph = document.createElement('p');
+        paragraph.textContent = text;
+        return paragraph;
+      }));
+    }
     $('era').textContent = profile.era;
     $('place').textContent = profile.place;
     $('daily').hidden = !card;
@@ -255,12 +277,9 @@ function initialize(root, initial) {
   for (const button of modes.children) button.onclick = () => { mode = button.dataset.mode; render(); };
   mobileMode.onchange = () => { mode = mobileMode.value; render(); };
   $('show-profile').onclick = () => {
-    const profile = profiles[id];
     $('mobile-actions').open = false;
-    $('profile-name').textContent = profile.name;
-    $('profile-school').textContent = `${profile.latin} · ${profile.school}`;
-    $('profile-intro').textContent = profile.intro;
-    $('profile-details').showModal();
+    setProfileExpanded(true);
+    profileToggle.focus();
   };
   $('mobile-reset').onclick = () => {
     $('mobile-actions').open = false;

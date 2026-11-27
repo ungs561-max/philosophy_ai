@@ -74,6 +74,17 @@ h1 { margin: .25rem 0 .5rem; font-size: 36px; font-weight: 700; line-height: 1.3
 .quiet { padding: .38rem .65rem; border-color: var(--line); color: var(--ink); }
 .quiet:hover:enabled { background: #b99a7216; }
 .reset { margin-top: .1rem; }
+#profile-toggle {
+  align-self: flex-start; flex: none; margin: 0 clamp(1rem, 2.5vw, 2.4rem) .3rem;
+  padding: .15rem 0; background: transparent; border: 0; color: var(--gold);
+  font-size: var(--control-size); font-weight: 600; line-height: 1.4;
+}
+#profile-details { display: grid; grid-template-rows: minmax(0, 0fr); flex: none; order: -2; transition: grid-template-rows 200ms ease; }
+#profile-details.expanded { grid-template-rows: minmax(0, 1fr); }
+.profile-clip { min-height: 0; overflow: hidden; }
+#profile-paragraphs { border-top: 1px solid var(--line); padding-top: 12px; }
+#profile-paragraphs p { margin: 0 0 12px; color: var(--ink); font-size: 15px; font-weight: 400; line-height: 1.8; letter-spacing: -.01em; }
+.profile-note { margin: 0 0 12px; padding-bottom: 12px; border-bottom: 1px solid var(--line); font-size: var(--meta-size); color: var(--muted); }
 .modes { display: flex; gap: .45rem; margin: 0 clamp(1rem, 2.5vw, 2.4rem); border-bottom: 1px solid var(--line); }
 .modes button { color: var(--muted); border-radius: 6px 6px 0 0; border-bottom: 3px solid transparent; }
 .modes button[aria-pressed="true"] { color: var(--gold); border-bottom-color: var(--gold); background: #b99a7216; }
@@ -142,9 +153,8 @@ button:disabled, textarea:disabled, select:disabled { color: var(--disabled); cu
   #mobile-actions summary { list-style: none; cursor: pointer; display: grid; place-items: center; color: var(--gold); width: 2.75rem; height: 2.75rem; font-size: 1.3rem; }
   #mobile-actions summary::-webkit-details-marker { display: none; }
   .extra-actions { position: absolute; inset: calc(100% + 1px) .45rem auto auto; display: grid; gap: .25rem; padding: .4rem; background: var(--nav); border: 1px solid var(--line); }
-  #profile-details { max-width: min(24rem, 90vw); color: var(--ink); background: var(--panel); border: 1px solid var(--gold); }
-  #profile-details p { font-size: 13px; line-height: 1.5; color: var(--muted); }
-  #profile-details::backdrop { background: #0009; }
+  #profile-toggle { margin: .1rem .55rem; }
+  #profile-paragraphs p { font-size: 14px; }
   .panel-scroll, .panel-scroll.welcome { display: flex; flex-direction: column; gap: .5rem; min-height: 0; padding: .4rem .55rem; overflow-anchor: none; }
   .panel-scroll .messages, .panel-scroll.welcome .messages { order: -1; margin-top: 0; gap: .85rem; }
   .daily { padding: .25rem .45rem; }
@@ -171,4 +181,4 @@ button:disabled, textarea:disabled, select:disabled { color: var(--disabled); cu
   .send-arrow { display: inline-block; font-size: 1.4rem; }
   .short-screen .identity .eyebrow { display: none; }
 }
-@media (prefers-reduced-motion: reduce) { .portrait, .stage { transition: none; } }
+@media (prefers-reduced-motion: reduce) { .portrait, .stage, #profile-details { transition: none; } }

@@ -133,7 +133,7 @@ st.html(f"""<style>
 }}
 </style>""")
 public_profiles = {
-    slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting")},
+    slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting", "detailed_description")},
            # Use Streamlit's media route with the browser's current app prefix,
            # including the prefix when Community Cloud embeds the app.
            "art": {

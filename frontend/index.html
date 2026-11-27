@@ -30,17 +30,20 @@
           </div>
         </details>
       </div>
-      <dialog id="profile-details" aria-labelledby="profile-name">
-        <h2 id="profile-name"></h2>
-        <p id="profile-school"></p>
-        <p id="profile-intro"></p>
-        <form method="dialog"><button class="quiet">닫기</button></form>
-      </dialog>
+      <button id="profile-toggle" type="button" aria-controls="profile-details" aria-expanded="false">
+        철학자 소개 <span aria-hidden="true">▾</span>
+      </button>
       <div id="modes" class="modes" role="group" aria-label="대화 모드">
         <button type="button" data-mode="counsel" aria-pressed="true">철학 상담</button>
         <button type="button" data-mode="study" aria-pressed="false">철학 공부</button>
       </div>
       <div class="panel-scroll" id="panel-scroll" tabindex="0" aria-label="대화 및 성찰 카드">
+        <section id="profile-details" aria-labelledby="profile-toggle" inert>
+          <div class="profile-clip">
+            <div id="profile-paragraphs"></div>
+            <p class="profile-note">철학자의 생애와 저작을 바탕으로 재구성한 가상의 대화 공간입니다.</p>
+          </div>
+        </section>
         <aside class="daily" id="daily" hidden>
           <button id="daily-toggle" class="mobile-only quiet" type="button" aria-controls="daily-content" aria-expanded="false"></button>
           <div id="daily-content">
