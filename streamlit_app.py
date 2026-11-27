@@ -132,10 +132,20 @@ st.html(f"""<style>
     font-display: swap;
 }}
 </style>""")
+avatar_names = {
+    "epictetus": "epictetus",
+    "laozi": "laozi",
+    "smith": "adam_smith",
+    "camus": "albert_camus",
+}
 public_profiles = {
     slug: {**{name: profile[name] for name in ("name", "latin", "school", "place", "era", "intro", "greeting", "detailed_description")},
            # Use Streamlit's media route with the browser's current app prefix,
            # including the prefix when Community Cloud embeds the app.
+           "avatar": "." + media.add(
+               str(ROOT / "static" / "profiles" / f"{avatar_names[slug]}.png"),
+               "image/png", f"philosopher-{slug}-avatar",
+           ),
            "art": {
                pose: "." + media.add(str(path), "image/png", f"philosopher-{slug}-{pose}")
                for pose, path in picture_paths(profile).items()

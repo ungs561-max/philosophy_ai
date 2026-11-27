@@ -179,6 +179,16 @@ function initialize(root, initial) {
     label.className = 'speaker';
     label.textContent = role === 'user' ? '나' : profiles[id].name;
     if (test && role === 'assistant' && !greeting) label.textContent += ' · 테스트 응답';
+    if (role === 'assistant' && profiles[id].avatar) {
+      const avatar = document.createElement('img');
+      avatar.className = 'speaker-avatar';
+      avatar.alt = '';
+      avatar.hidden = true;
+      avatar.onload = () => { avatar.hidden = false; };
+      avatar.onerror = () => avatar.remove();
+      label.prepend(avatar);
+      avatar.src = profiles[id].avatar;
+    }
     const body = document.createElement('p');
     if (role === 'assistant') setAssistantText(body, text);
     else body.textContent = text;
